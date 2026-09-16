@@ -1,0 +1,38 @@
+// Compatibility copy. Deploy the canonical storage.rules file configured in firebase.json.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function activeUser() {
+      return request.auth != null && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+    function isAdmin() {
+      return activeUser() && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function image() {
+      return request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    function owner(uid, bookingId) {
+      return activeUser() && request.auth.uid == uid
+        && firestore.get(/databases/(default)/documents/bookings/$(bookingId)).data.userId == uid;
+    }
+    match /payments/{uid}/{bookingId}/{fileName} {
+      allow read: if owner(uid, bookingId) || isAdmin();
+      allow create: if image() && owner(uid, bookingId)
+        && firestore.get(/databases/(default)/documents/bookings/$(bookingId)).data.bookingStatus in ['pending', 'payment_failed']
+        && firestore.get(/databases/(default)/documents/bookings/$(bookingId)).data.paymentStatus in ['pending', 'rejected'];
+      allow update: if isAdmin() && image();
+      allow delete: if isAdmin();
+    }
+    match /destinations/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && image();
+      allow delete: if isAdmin();
+    }
+    match /packages/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && image();
+      allow delete: if isAdmin();
+    }
+  }
+}

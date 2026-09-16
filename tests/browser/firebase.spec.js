@@ -1,0 +1,97 @@
+import { test, expect } from '@playwright/test';
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+
+// Test-only Firebase demo project, connected exclusively to local emulators.
+// No project credentials or deployment .env values are used by this fixture.
+let env;
+test.beforeAll(async () => { env = await initializeTestEnvironment({ projectId: 'demo-travelaura', firestore: { host: '127.0.0.1', port: 8080 } }); });
+test.afterAll(async () => { await env?.cleanup(); });
+test('Firebase registration, login, persisted session and live Firestore roles', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.route(/https:\/\/(images\.unsplash\.com|fonts\.(googleapis|gstatic)\.com)\//, route => route.abort());
+  // Route the test module through Vite so SDK imports receive normal dependency resolution.
+  await page.route('**/src/lib/firebase.js*', async route => {
+    const response = await page.request.get('http://127.0.0.1:54173/tests/fixtures/firebase.js');
+    await route.fulfill({ contentType: 'text/javascript', body: await response.text() });
+  });
+  await page.goto('/register');
+  await page.getByLabel('Name', { exact: true }).fill('Firebase Admin Candidate');
+  const email = `contains-admin-${Date.now()}@example.test`;
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Phone', { exact: true }).fill('9876543210');
+  await page.getByLabel('Password', { exact: true }).fill('password123');
+  await page.getByLabel('Confirm password', { exact: true }).fill('password123');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/packages$/);
+  const uid = await page.evaluate(async () => (await import('/src/lib/firebase.js')).auth.currentUser.uid);
+  await env.withSecurityRulesDisabled(async context => {
+    const profile = (await getDoc(doc(context.firestore(), 'users', uid))).data();
+    expect(profile).toMatchObject({ uid, name: 'Firebase Admin Candidate', email, phone: '9876543210', role: 'user', active: true });
+    expect(profile.createdAt).toBeTruthy();
+  });
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/my-bookings$/);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'My bookings', exact: true })).toBeVisible();
+  await page.evaluate(() => localStorage.setItem('travelaura_user', JSON.stringify({ id: 'spoof', role: 'admin', active: true })));
+  await page.goto('/admin/users');
+  await expect(page).toHaveURL(/my-bookings$/);
+  await env.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), 'users', uid), { role: 'admin' }));
+  await expect(page.getByRole('link', { name: 'Admin', exact: true })).toBeVisible();
+  await page.goto('/admin');
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  // Exercise the existing admin forms and the same public Firestore catalog.
+  const destinationName = `Browser destination ${Date.now()}`;
+  const packageName = `Browser package ${Date.now()}`;
+  const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=', 'base64');
+  await page.goto('/admin/destinations');
+  await page.getByRole('button', { name: '+ Add destination', exact: true }).click();
+  await page.locator('[name=name]').fill(destinationName);
+  await page.locator('[name=imageFile]').setInputFiles({ name: 'destination.png', mimeType: 'image/png', buffer: image });
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('.admin-row').filter({ hasText: destinationName })).toBeVisible();
+  await page.goto('/destinations');
+  await expect(page.getByRole('heading', { name: destinationName, exact: true })).toBeVisible();
+  await page.goto('/admin/packages');
+  await page.getByRole('button', { name: '+ Add package', exact: true }).click();
+  await page.locator('[name=name]').fill(packageName);
+  await page.locator('[name=destinationId]').selectOption({ label: destinationName });
+  await page.locator('[name=availableDates]').fill('2099-10-10');
+  await page.locator('[name=imageFile]').setInputFiles({ name: 'package.png', mimeType: 'image/png', buffer: image });
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('.admin-row').filter({ hasText: packageName })).toBeVisible();
+  await page.goto('/packages');
+  await expect(page.getByRole('heading', { name: packageName, exact: true })).toBeVisible();
+  await page.goto('/admin/packages');
+  await page.locator('.admin-row').filter({ hasText: packageName }).getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.locator('[name=active]').uncheck();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('.admin-editor')).toHaveCount(0);
+  await page.goto('/packages');
+  await expect(page.getByRole('heading', { name: packageName, exact: true })).toHaveCount(0);
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/admin/packages');
+  await page.locator('.admin-row').filter({ hasText: packageName }).getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.locator('.admin-row').filter({ hasText: packageName })).toHaveCount(0);
+  await page.goto('/admin/destinations');
+  await page.locator('.admin-row').filter({ hasText: destinationName }).getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.locator('.admin-row').filter({ hasText: destinationName })).toHaveCount(0);
+  await page.goto('/my-bookings');
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/login$/);
+  await page.reload();
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Password', { exact: true }).fill('wrong-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.locator('.auth-card .form-error')).toBeVisible();
+  await page.getByLabel('Password', { exact: true }).fill('password123');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/admin$/);
+  await env.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), 'users', uid), { active: false }));
+  await expect(page).toHaveURL(/login$/);
+  await expect(page.getByRole('alert')).toContainText('inactive');
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,127 @@
+// Compatibility copy. Deploy the canonical firestore.rules file configured in firebase.json.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function activeUser() {
+      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+    function isAdmin() {
+      return activeUser() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function text(value, max) { return value is string && value.size() > 0 && value.size() <= max; }
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list, delete: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'phone', 'role', 'active', 'createdAt'])
+        && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'user' && request.resource.data.active == true
+        && text(request.resource.data.name, 150) && request.resource.data.phone is string
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() || (activeUser() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone'])
+        && text(request.resource.data.name, 150) && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 30);
+    }
+    match /destinations/{id} {
+      allow read: if resource.data.active == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+    match /packages/{id} {
+      allow read: if resource.data.active == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+    function validCoupon(code, subtotal) {
+      let c = get(/databases/$(database)/documents/coupons/$(code)).data;
+      return c.active == true && c.code == code && subtotal >= c.minimumAmount
+        && (c.expiryDate == '' || request.time <= c.expiresAt)
+        && (c.usageLimit == 0 || c.usedCount < c.usageLimit);
+    }
+    function discount(code, subtotal) {
+      let c = get(/databases/$(database)/documents/coupons/$(code)).data;
+      let amount = c.type == 'fixed' ? c.value : math.round(subtotal * c.value / 100);
+      return amount > subtotal ? subtotal : amount;
+    }
+    function couponForBooking(b, bookingId) {
+      return (b.couponCode == '' && b.discount == 0) ||
+        (b.couponCode != '' && validCoupon(b.couponCode, b.subtotal)
+        && b.discount == discount(b.couponCode, b.subtotal)
+        && getAfter(/databases/$(database)/documents/coupons/$(b.couponCode)).data.usedCount ==
+          get(/databases/$(database)/documents/coupons/$(b.couponCode)).data.usedCount + 1
+        && getAfter(/databases/$(database)/documents/coupons/$(b.couponCode)).data.lastBookingId == bookingId);
+    }
+    function validBooking(b, id) {
+      let p = get(/databases/$(database)/documents/packages/$(b.packageId)).data;
+      return b.keys().hasOnly(['userId', 'packageId', 'destinationId', 'packageName', 'destination', 'customerName', 'email', 'phone', 'country', 'travelDate', 'returnDate', 'adults', 'children', 'rooms', 'specialRequirements', 'subtotal', 'couponCode', 'discount', 'totalAmount', 'priceBreakdown', 'transactionId', 'paymentScreenshot', 'paymentStatus', 'bookingStatus', 'createdAt'])
+        && b.userId == request.auth.uid && p.active == true && b.destinationId == p.destinationId
+        && b.adults is int && b.adults >= 1 && b.adults <= p.maxAdults
+        && b.children is int && b.children >= 0 && b.children <= p.maxChildren
+        && b.rooms is int && b.rooms >= 1 && b.rooms <= p.maxRooms
+        && text(b.customerName, 150) && text(b.email, 254) && text(b.phone, 30)
+        && b.specialRequirements is string && b.specialRequirements.size() <= 5000
+        && b.travelDate is string && b.returnDate > b.travelDate
+        && (p.availableDates.size() == 0 || b.travelDate in p.availableDates)
+        && b.subtotal == p.pricePerAdult * b.adults + p.pricePerChild * b.children
+        && b.discount >= 0 && b.discount <= b.subtotal && b.totalAmount == b.subtotal - b.discount
+        && couponForBooking(b, id)
+        && b.paymentStatus == 'pending' && b.bookingStatus == 'pending'
+        && b.transactionId == '' && b.paymentScreenshot == '' && b.createdAt == request.time;
+    }
+    match /bookings/{id} {
+      allow create: if activeUser() && validBooking(request.resource.data, id);
+      allow read: if activeUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+      allow update: if isAdmin() || (activeUser() && resource.data.userId == request.auth.uid && (
+        (resource.data.bookingStatus in ['pending', 'payment_failed']
+          && resource.data.paymentStatus in ['pending', 'rejected']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['transactionId', 'paymentScreenshot', 'paymentStatus', 'bookingStatus', 'paymentSubmittedAt'])
+          && request.resource.data.paymentStatus == 'pending' && request.resource.data.bookingStatus == 'pending'
+          && request.resource.data.transactionId is string
+          && (request.resource.data.transactionId == '' || request.resource.data.transactionId.matches('^[A-Za-z0-9-]{8,30}$'))
+          && request.resource.data.paymentScreenshot is string
+          && (request.resource.data.paymentScreenshot == '' ||
+            (text(request.resource.data.paymentScreenshot, 2048) && request.resource.data.paymentScreenshot.matches('https?://.*')))
+          && request.resource.data.paymentSubmittedAt == request.time)
+        || (resource.data.bookingStatus in ['pending', 'confirmed']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookingStatus', 'cancellationRequestedAt'])
+          && request.resource.data.bookingStatus == 'cancellation_requested'
+          && request.resource.data.cancellationRequestedAt == request.time)
+      ));
+    }
+    match /reviews/{id} {
+      allow read: if resource.data.status == 'approved' || isAdmin() || (activeUser() && resource.data.userId == request.auth.uid);
+      allow create: if activeUser()
+        && request.resource.data.keys().hasOnly(['userId', 'userName', 'packageId', 'bookingId', 'rating', 'title', 'comment', 'status', 'featured', 'createdAt'])
+        && request.resource.data.userId == request.auth.uid && request.resource.data.bookingId == id
+        && get(/databases/$(database)/documents/bookings/$(id)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/bookings/$(id)).data.bookingStatus == 'completed'
+        && get(/databases/$(database)/documents/bookings/$(id)).data.packageId == request.resource.data.packageId
+        && request.resource.data.userName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name
+        && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && text(request.resource.data.title, 200) && text(request.resource.data.comment, 5000)
+        && request.resource.data.status == 'pending' && request.resource.data.featured == false
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+    match /coupons/{id} {
+      allow get: if activeUser();
+      allow list, create, delete: if isAdmin();
+      // A customer may only consume one use alongside a new booking, atomically.
+      allow update: if isAdmin() || (activeUser()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount', 'lastBookingId'])
+        && request.resource.data.usedCount == resource.data.usedCount + 1
+        && !exists(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId))
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.userId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.couponCode == id
+        && validCoupon(id, getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.subtotal));
+    }
+    match /contacts/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'message', 'createdAt'])
+        && text(request.resource.data.name, 150) && text(request.resource.data.email, 254)
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
+        && text(request.resource.data.message, 5000) && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}

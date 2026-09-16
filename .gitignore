@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.DS_Store
+
+.env.*
+!.env.example
+.firebase/
+*-debug.log
+*-debug.*.log
+playwright-report/
+test-results/
