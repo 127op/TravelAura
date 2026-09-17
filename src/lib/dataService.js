@@ -6,6 +6,7 @@ import { auth, db as firestore, isDemo } from './firebase.js';
 import { demoAuth, demoDb } from './demoService.js';
 import { uploadFile } from './storageService.js';
 import { bookingData, couponDiscount } from './bookingValidation.js';
+import { calendarDate, catalogData, contactData, reviewData } from './validation.js';
 
 const normalize = value => {
   if (value?.toDate) return value.toDate().toISOString();
@@ -23,7 +24,7 @@ function couponData(item) {
   if (!['fixed', 'percentage'].includes(item.type) || !Number.isFinite(value) || value < 0 ||
       (item.type === 'percentage' && value > 100) || !Number.isFinite(minimumAmount) || minimumAmount < 0 ||
       !Number.isInteger(usageLimit) || usageLimit < 0 ||
-      (item.expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate))) throw new Error('Check the coupon value, minimum, expiry and usage limit.');
+      (item.expiryDate && !calendarDate(item.expiryDate))) throw new Error('Check the coupon value, minimum, expiry and usage limit.');
   return { ...item, id: code, code, value, minimumAmount, usageLimit, usedCount: Number(item.usedCount || 0) };
 }
 
@@ -49,6 +50,7 @@ export function createFirestoreService(firebaseAuth, database, imageUpload = upl
     getDestinations: ({ admin = false } = {}) => list('destinations', admin ? [] : [where('active', '==', true)]),
     getPackages: ({ admin = false } = {}) => list('packages', admin ? [] : [where('active', '==', true)]),
     getReviews: ({ admin = false } = {}) => list('reviews', admin ? [] : [where('status', '==', 'approved')]),
+    getMyReview: async bookingId => (await list('reviews', [where('userId', '==', requireUser())])).find(review => review.bookingId === bookingId) || null,
     getBookings: async ({ admin = false } = {}) => newest(await list('bookings', admin ? [] : [where('userId', '==', requireUser())])),
     getBooking: id => get('bookings', id),
     getUsers: () => list('users'),
@@ -59,9 +61,9 @@ export function createFirestoreService(firebaseAuth, database, imageUpload = upl
       couponDiscount(coupon, subtotal);
       return coupon;
     },
-    saveDestination: item => save('destinations', { ...item, active: item.active !== false }),
+    saveDestination: item => save('destinations', catalogData(item, 'destination')),
     deleteDestination: id => remove('destinations', id),
-    savePackage: item => save('packages', { ...item, active: item.active !== false }),
+    savePackage: item => save('packages', catalogData(item, 'package')),
     deletePackage: id => remove('packages', id),
     async createBooking(input) {
       const uid = requireUser();
@@ -94,9 +96,15 @@ export function createFirestoreService(firebaseAuth, database, imageUpload = upl
     async saveReview(input) {
       const userId = requireUser();
       const profile = await get('users', userId);
-      return save('reviews', { id: input.bookingId, userId, userName: profile.name,
-        packageId: input.packageId, bookingId: input.bookingId, rating: Number(input.rating),
-        title: input.title.trim(), comment: input.comment.trim(), status: 'pending', featured: false, createdAt: serverTimestamp() });
+      const booking = await get('bookings', input.bookingId);
+      const data = reviewData(input, booking, profile);
+      if (await service.getMyReview(input.bookingId)) throw new Error('You have already submitted a review for this booking.');
+      try {
+        return await save('reviews', { ...data, id: input.bookingId, createdAt: serverTimestamp() });
+      } catch (error) {
+        if (error.code === 'permission-denied' && await service.getMyReview(input.bookingId)) throw new Error('You have already submitted a review for this booking.');
+        throw error;
+      }
     },
     updateReview: (id, patch) => update('reviews', id, patch),
     deleteReview: id => remove('reviews', id),
@@ -107,7 +115,7 @@ export function createFirestoreService(firebaseAuth, database, imageUpload = upl
     },
     deleteCoupon: id => remove('coupons', id),
     updateUser: (id, patch) => update('users', id, patch),
-    saveContact: input => save('contacts', { name: input.name.trim(), email: input.email.trim(), phone: input.phone?.trim() || '', message: input.message.trim(), createdAt: serverTimestamp() }),
+    saveContact: input => save('contacts', { ...contactData(input), createdAt: serverTimestamp() }),
     uploadFile: imageUpload,
   };
   return service;
@@ -118,6 +126,7 @@ const localService = {
   getDestinations: ({ admin = false } = {}) => demoDb.getDestinations().filter(x => admin || x.active !== false),
   getPackages: ({ admin = false } = {}) => demoDb.getPackages().filter(x => admin || x.active !== false),
   getReviews: ({ admin = false } = {}) => demoDb.getReviews().filter(x => admin || x.status === 'approved'),
+  getMyReview: bookingId => demoDb.getReviews().find(x => x.bookingId === bookingId && x.userId === demoAuth.getUser()?.id) || null,
   getBookings: ({ admin = false } = {}) => newest(demoDb.getBookings().filter(x => admin || x.userId === demoAuth.getUser()?.id)),
   getBooking: id => demoDb.getBookings().find(x => x.id === id && (x.userId === demoAuth.getUser()?.id || demoAuth.getUser()?.role === 'admin')),
   validateCoupon(code, subtotal) {
@@ -143,6 +152,17 @@ const localService = {
     return url;
   },
   saveCoupon: item => demoDb.saveCoupon(couponData(item)),
+  saveDestination: item => demoDb.saveDestination(catalogData(item, 'destination')),
+  savePackage: item => demoDb.savePackage(catalogData(item, 'package')),
+  saveContact: input => demoDb.saveContact(contactData(input)),
+  saveReview(input) {
+    const user = demoAuth.getUser();
+    if (!user) throw new Error('Please sign in to continue.');
+    const booking = localService.getBooking(input.bookingId);
+    const data = reviewData(input, booking, user);
+    if (localService.getMyReview(input.bookingId)) throw new Error('You have already submitted a review for this booking.');
+    return demoDb.saveReview({ ...data, id: input.bookingId });
+  },
   uploadFile,
 };
 export const db = isDemo ? localService : createFirestoreService(auth, firestore);

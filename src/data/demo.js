@@ -48,5 +48,7 @@ export const seedReviews=[
 ];
 export const seedCoupons=[
  {id:'WELCOME10',code:'WELCOME10',type:'percentage',value:10,minimumAmount:5000,expiryDate:'2027-12-31',usageLimit:100,usedCount:0,active:true},
- {id:'FLAT500',code:'FLAT500',type:'fixed',value:500,minimumAmount:10000,expiryDate:'2027-12-31',usageLimit:100,usedCount:0,active:true}
+ {id:'FLAT500',code:'FLAT500',type:'fixed',value:500,minimumAmount:10000,expiryDate:'2027-12-31',usageLimit:100,usedCount:0,active:true},
+ {id:'CS100',code:'CS100',type:'percentage',value:100,minimumAmount:1000,expiryDate:'2027-12-31',usageLimit:100,usedCount:0,active:true},
+ {id:'FIRST1000',code:'FIRST1000',type:'fixed',value:1000,minimumAmount:0,expiryDate:'2027-12-31',usageLimit:100,usedCount:0,active:true}
 ];

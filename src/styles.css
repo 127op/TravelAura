@@ -5,6 +5,7 @@
 .contact,.faq{max-width:1100px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;padding-top:95px}.contact-intro h1,.faq h1{font-size:56px}.contact-intro>p{max-width:460px;color:#667a75;line-height:1.7;font-size:17px}.contact-details{display:grid;gap:14px;margin-top:34px;color:var(--teal)}.contact-details div{display:flex;align-items:center;gap:10px}.contact-form h2{font-size:30px;margin-bottom:10px}.form-card textarea{width:100%;display:block;border:1px solid #ccd9d4;padding:13px;border-radius:4px;margin-top:8px;resize:vertical;outline-color:var(--teal)}.faq-list{border-top:1px solid var(--line)}.faq-item{border-bottom:1px solid var(--line)}.faq-item button{width:100%;padding:22px 0;display:flex;justify-content:space-between;align-items:center;text-align:left;color:var(--ink);font-weight:600}.faq-item button svg{color:var(--teal);transition:transform .2s}.faq-item.open button svg{transform:rotate(45deg)}.faq-item p{color:#667a75;line-height:1.65;margin:0 30px 22px 0}
 @media(max-width:800px){.contact,.faq{grid-template-columns:1fr;gap:30px;padding-top:55px}.contact-intro h1,.faq h1{font-size:46px}}
 .coupon-row{display:flex;gap:8px}.coupon-row input{flex:1}.coupon-row button{background:var(--teal);color:#fff;padding:0 14px;border-radius:4px}.form-card fieldset{border:1px solid var(--line);margin-top:24px;padding:12px 16px}.form-card legend{font-weight:700;color:var(--teal)}.upload{display:flex!important;align-items:center;gap:5px}.upload input{border:0!important;padding:5px!important}.admin-actions{display:flex;gap:5px}.admin-actions button{background:#eaf3ef;color:var(--teal);padding:8px;border-radius:4px}.admin-booking small{display:block;color:#879692;font-size:11px}.admin-booking em.ok{background:#e0f3e8;color:#27734f}.admin-form{margin-bottom:18px}.admin-form input{border:1px solid var(--line);padding:10px;border-radius:4px}.admin-form .button{margin-top:0}
+.coupon-hint{margin:8px 0 0;color:#71837d;font-size:12px;line-height:1.5}.coupon-hint strong{color:var(--teal)}
 .admin-add{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px}.admin-editor{background:#f5f8f6;border:1px solid var(--line);padding:16px;margin:8px 0 12px;display:grid;gap:12px}.admin-editor label{display:grid;gap:6px;font-size:12px;color:#61756e;font-weight:600}.admin-editor input,.admin-editor select,.admin-editor textarea{border:1px solid var(--line);padding:10px;border-radius:4px;background:#fff;font:inherit;color:var(--ink)}.admin-editor textarea{min-height:70px;resize:vertical}.admin-editor .form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.admin-editor .button{margin:0}.button.secondary{background:#e7efeb;color:var(--teal)}
 @media(max-width:800px){.admin-editor .form-row{grid-template-columns:1fr}.admin-booking{align-items:flex-start;flex-wrap:wrap}.admin-booking>div{min-width:55%}}
 @media(max-width:800px){.header{height:auto;min-height:68px;flex-wrap:wrap}.nav,.nav.open{display:flex;position:static;order:3;width:100%;padding:14px 0 10px;margin:0;flex-direction:row;gap:18px;border:0;overflow-x:auto}.nav a{white-space:nowrap}.menu{display:none}}
@@ -22,3 +23,197 @@
 @media print{body{background:#fff}.header,footer,.service-notice,.no-print{display:none!important}.booking-detail-page{max-width:none;padding:0}.detail-panel{border:0;box-shadow:none;padding:0}.printable-booking{display:block}.booking-detail-grid{break-inside:avoid}.payment-preview{max-width:280px}}
 .trip-image-wrap{display:block;position:relative;height:285px;overflow:hidden;border-radius:7px}.trip-image-wrap .trip-image{display:block;width:100%;height:100%;object-fit:cover}.trip-tag{position:absolute;left:13px;top:13px;background:#fff;padding:7px 10px;font-size:11px;font-weight:700;border-radius:3px}.trip-copy{min-width:0}.trip-meta span{display:flex;align-items:center;gap:4px;min-width:0}.trip-meta span:first-child{overflow-wrap:anywhere}.trip-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px}.trip-bottom span,.trip-bottom strong{display:flex;align-items:center;gap:4px;white-space:nowrap}.trip-bottom strong{margin-left:auto}
 @media(max-width:800px){.trip-image-wrap{height:245px}.trip-bottom{align-items:flex-start;flex-wrap:wrap}.trip-bottom strong{margin-left:0}}
+
+.theme-toggle{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;color:var(--teal);background:transparent}.theme-toggle:hover{background:var(--mint)}.theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.admin-brand{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 9px 50px}.admin-brand h2{margin:0}.admin-brand .theme-toggle{color:#dbe9e4;border-color:#47716a}.admin-brand .theme-toggle:hover{background:#285e57}
+
+:root[data-theme='dark']{--ink:#e5eee9;--teal:#4ec4b3;--mint:#18352f;--cream:#111918;--line:#30443f;--gold:#f0ad61;--muted:#a4b5af;color-scheme:dark}html[data-theme='dark'],html[data-theme='dark'] body{background:var(--cream);color:var(--ink)}
+:root[data-theme='dark'] .header{border-color:#263934}.nav a{color:#9cafaa}.nav a.active,.nav a:hover,.login,.user-pill{color:var(--teal)}
+:root[data-theme='dark'] footer{background:#0c1312;color:var(--ink)}
+:root[data-theme='dark'] .auth-page,:root[data-theme='dark'] .auth{background:linear-gradient(120deg,#142b27,#111918)}
+:root[data-theme='dark'] .form-card,:root[data-theme='dark'] .auth-card,:root[data-theme='dark'] .auth-box,:root[data-theme='dark'] .destination-card,:root[data-theme='dark'] .testimonial,:root[data-theme='dark'] .detail-panel,:root[data-theme='dark'] .booking-card,:root[data-theme='dark'] .summary,:root[data-theme='dark'] .payment-card,:root[data-theme='dark'] .filter-panel,:root[data-theme='dark'] .form-panel{background:#1a2825;border-color:var(--line);color:var(--ink)}
+:root[data-theme='dark'] input,:root[data-theme='dark'] select,:root[data-theme='dark'] textarea,:root[data-theme='dark'] .admin-editor input,:root[data-theme='dark'] .admin-editor select,:root[data-theme='dark'] .admin-editor textarea{background:#14201e;color:var(--ink);border-color:#3b524c} :root[data-theme='dark'] input::placeholder,:root[data-theme='dark'] textarea::placeholder{color:#80958e}
+:root[data-theme='dark'] .admin,:root[data-theme='dark'] .admin-main,:root[data-theme='dark'] .admin-editor{background:#14201e;color:var(--ink)}:root[data-theme='dark'] .admin-side{background:#0c2521}:root[data-theme='dark'] .admin-side button.selected,:root[data-theme='dark'] .admin-side button:hover,:root[data-theme='dark'] .admin-side a.active,:root[data-theme='dark'] .admin-side a:hover{background:#285e57;color:#fff}
+:root[data-theme='dark'] .button.secondary,:root[data-theme='dark'] .admin-actions button{background:#29423c;color:#8ee0d1}:root[data-theme='dark'] .trip-tag{background:#1a2825;color:var(--ink)}:root[data-theme='dark'] .booking-icon{background:#214139}:root[data-theme='dark'] .empty.mini,:root[data-theme='dark'] .info-chips span,:root[data-theme='dark'] .search-summary{background:#1d3933;color:#a4e6db!important}:root[data-theme='dark'] .simple-chart div:after{background:#2a403b}
+:root[data-theme='dark'] .faq-item button{color:var(--ink)}:root[data-theme='dark'] .upi-qr{border-color:#1a2825;color:#173b39}:root[data-theme='dark'] .upi-qr b,:root[data-theme='dark'] .upi-qr span,:root[data-theme='dark'] .upi-qr small{background:#fff}
+:root[data-theme='dark'] .button:disabled{background:#34413e;color:#7f918b}:root[data-theme='dark'] .form-error{color:#f28d80}
+:root[data-theme='dark'] .admin-row{background:#1a2825;color:var(--ink)}:root[data-theme='dark'] .admin-row strong,:root[data-theme='dark'] .admin-row>span{color:var(--ink)}:root[data-theme='dark'] .admin-row small{color:var(--muted)}:root[data-theme='dark'] .admin-row .status-paid{background:#285246;color:#a4e6c0}:root[data-theme='dark'] .admin-row .status-rejected{background:#5a302d;color:#ffc0b8}:root[data-theme='dark'] .admin-row button:disabled{background:#46534f;color:#b1bfba}
+:root[data-theme='dark'] .stat,:root[data-theme='dark'] .admin-panel{background:#1a2825;border-color:var(--line);color:var(--ink)}:root[data-theme='dark'] .stat span,:root[data-theme='dark'] .stats small,:root[data-theme='dark'] .mini-row small,:root[data-theme='dark'] .muted{color:#b8c8c2}:root[data-theme='dark'] .mini-row>span{color:#d2e0db}:root[data-theme='dark'] .simple-chart span{color:#d2e0db}:root[data-theme='dark'] .admin-panel h2{color:#f0f7f4}
+:root[data-theme='dark'] .booking-row,:root[data-theme='dark'] .summary,:root[data-theme='dark'] .payment-card,:root[data-theme='dark'] .filter-panel,:root[data-theme='dark'] .searchbar,:root[data-theme='dark'] .detail-panel{background:#1a2825;border-color:var(--line);color:var(--ink)}:root[data-theme='dark'] .booking-row p,:root[data-theme='dark'] .account-head p,:root[data-theme='dark'] .summary p,:root[data-theme='dark'] .summary div,:root[data-theme='dark'] .payment-card ol,:root[data-theme='dark'] .about-lead,:root[data-theme='dark'] .about-bottom p,:root[data-theme='dark'] .contact-intro>p,:root[data-theme='dark'] .faq-item p,:root[data-theme='dark'] .destination-card p,:root[data-theme='dark'] .destination-facts,:root[data-theme='dark'] .result-count{color:#b8c8c2}:root[data-theme='dark'] .summary b{color:#f0f7f4}:root[data-theme='dark'] .booking-row h3,:root[data-theme='dark'] .booking-row strong,:root[data-theme='dark'] .summary h3,:root[data-theme='dark'] .detail-panel h3{color:#f0f7f4}
+:root[data-theme='dark'] .filter-panel input,:root[data-theme='dark'] .filter-panel select,:root[data-theme='dark'] .searchbar input,:root[data-theme='dark'] .searchbar select,:root[data-theme='dark'] .form-card input,:root[data-theme='dark'] .form-card select,:root[data-theme='dark'] .form-card textarea,:root[data-theme='dark'] .payment-card input{background:#14201e;color:#e5eee9;border-color:#3b524c}:root[data-theme='dark'] .searchbar label span{color:#b8c8c2}:root[data-theme='dark'] .searchbar input::placeholder{color:#d2e0db}
+:root[data-theme='dark'] .booking-row .status,:root[data-theme='dark'] .status-paid,:root[data-theme='dark'] .status-approved,:root[data-theme='dark'] .status-confirmed,:root[data-theme='dark'] .status-completed{background:#285246;color:#a4e6c0}:root[data-theme='dark'] .status-pending,:root[data-theme='dark'] .status-cancellation_requested,:root[data-theme='dark'] .status-cancellation-requested{background:#59451f;color:#ffe0a3}:root[data-theme='dark'] .status-rejected,:root[data-theme='dark'] .status-payment_failed,:root[data-theme='dark'] .status-cancelled{background:#5a302d;color:#ffc0b8}
+:root[data-theme='dark'] .booking-detail-grid>div{background:#1a2825;color:var(--ink);border:1px solid var(--line)}:root[data-theme='dark'] .booking-detail-grid h3{color:#f0f7f4}:root[data-theme='dark'] .booking-detail-grid p{color:#b8c8c2}:root[data-theme='dark'] .booking-detail-grid b,:root[data-theme='dark'] .booking-detail-grid .big-price{color:#e5eee9}
+:root[data-theme='dark']{--ink:#eef0f2;--teal:#63c8ba;--mint:#2b2e33;--cream:#151719;--line:#454a50;--gold:#f0ad61;--muted:#b9bec5}:root[data-theme='dark'] html,:root[data-theme='dark'] body{background:#151719;color:#eef0f2}:root[data-theme='dark'] footer{background:#101214}:root[data-theme='dark'] .auth-page,:root[data-theme='dark'] .auth{background:linear-gradient(120deg,#202328,#151719)}:root[data-theme='dark'] .form-card,:root[data-theme='dark'] .auth-card,:root[data-theme='dark'] .auth-box,:root[data-theme='dark'] .destination-card,:root[data-theme='dark'] .testimonial,:root[data-theme='dark'] .detail-panel,:root[data-theme='dark'] .booking-card,:root[data-theme='dark'] .summary,:root[data-theme='dark'] .payment-card,:root[data-theme='dark'] .filter-panel,:root[data-theme='dark'] .form-panel,:root[data-theme='dark'] .booking-row,:root[data-theme='dark'] .searchbar,:root[data-theme='dark'] .admin-row,:root[data-theme='dark'] .stat,:root[data-theme='dark'] .admin-panel{background:#1e2125;border-color:#454a50;color:#eef0f2}
+:root[data-theme='dark'] .admin,:root[data-theme='dark'] .admin-main,:root[data-theme='dark'] .admin-editor{background:#191b1f;color:#eef0f2}:root[data-theme='dark'] .admin-side{background:#111316}:root[data-theme='dark'] .admin-side button.selected,:root[data-theme='dark'] .admin-side button:hover,:root[data-theme='dark'] .admin-side a.active,:root[data-theme='dark'] .admin-side a:hover{background:#3a3f45;color:#fff}:root[data-theme='dark'] .admin-brand .theme-toggle{border-color:#626970;color:#e8ebed}:root[data-theme='dark'] .admin-brand .theme-toggle:hover{background:#3a3f45}
+:root[data-theme='dark'] input,:root[data-theme='dark'] select,:root[data-theme='dark'] textarea,:root[data-theme='dark'] .admin-editor input,:root[data-theme='dark'] .admin-editor select,:root[data-theme='dark'] .admin-editor textarea,:root[data-theme='dark'] .filter-panel input,:root[data-theme='dark'] .filter-panel select,:root[data-theme='dark'] .searchbar input,:root[data-theme='dark'] .searchbar select,:root[data-theme='dark'] .form-card input,:root[data-theme='dark'] .form-card select,:root[data-theme='dark'] .form-card textarea,:root[data-theme='dark'] .payment-card input{background:#24272c;color:#eef0f2;border-color:#545a62}:root[data-theme='dark'] input::placeholder,:root[data-theme='dark'] textarea::placeholder{color:#aeb4bc}
+:root[data-theme='dark'] .button.secondary,:root[data-theme='dark'] .admin-actions button{background:#353a41;color:#d5d9de}:root[data-theme='dark'] .trip-tag,:root[data-theme='dark'] .booking-icon,:root[data-theme='dark'] .empty.mini,:root[data-theme='dark'] .info-chips span,:root[data-theme='dark'] .search-summary{background:#30353b;color:#e1e4e7!important}:root[data-theme='dark'] .simple-chart div:after{background:#454a50}:root[data-theme='dark'] .simple-chart i{background:#63c8ba}
+:root[data-theme='dark'] .stats span,:root[data-theme='dark'] .stats small,:root[data-theme='dark'] .mini-row small,:root[data-theme='dark'] .muted,:root[data-theme='dark'] .booking-row p,:root[data-theme='dark'] .account-head p,:root[data-theme='dark'] .summary p,:root[data-theme='dark'] .summary div,:root[data-theme='dark'] .payment-card ol,:root[data-theme='dark'] .about-lead,:root[data-theme='dark'] .about-bottom p,:root[data-theme='dark'] .contact-intro>p,:root[data-theme='dark'] .faq-item p,:root[data-theme='dark'] .destination-card p,:root[data-theme='dark'] .destination-facts,:root[data-theme='dark'] .result-count,:root[data-theme='dark'] .booking-detail-grid p{color:#c3c8ce}:root[data-theme='dark'] .stat strong,:root[data-theme='dark'] .mini-row>span,:root[data-theme='dark'] .booking-row h3,:root[data-theme='dark'] .booking-row strong,:root[data-theme='dark'] .summary b,:root[data-theme='dark'] .summary h3,:root[data-theme='dark'] .detail-panel h3,:root[data-theme='dark'] .booking-detail-grid h3,:root[data-theme='dark'] .booking-detail-grid b,:root[data-theme='dark'] .booking-detail-grid .big-price{color:#f0f2f4}
+:root[data-theme='dark'] .booking-detail-grid>div{background:#1e2125;border-color:#454a50;color:#eef0f2}:root[data-theme='dark'] .booking-detail-grid>div p{color:#c3c8ce}:root[data-theme='dark'] .booking-detail-grid>div h3{color:#f0f2f4}
+:root[data-theme='dark'] .modal-backdrop{background:rgba(0,0,0,.72)}:root[data-theme='dark'] .modal-card{background:#1e2125;border:1px solid #454a50;color:#eef0f2;box-shadow:0 24px 70px rgba(0,0,0,.45)}:root[data-theme='dark'] .modal-card h1,:root[data-theme='dark'] .modal-card h2,:root[data-theme='dark'] .modal-card h3{color:#f0f2f4}:root[data-theme='dark'] .modal-card p,:root[data-theme='dark'] .modal-card small,:root[data-theme='dark'] .modal-card label{color:#c3c8ce}:root[data-theme='dark'] .modal-card strong{color:#f0f2f4}:root[data-theme='dark'] .modal-close{color:#eef0f2}:root[data-theme='dark'] .modal-card .admin-actions button{background:#353a41;color:#d5d9de;border:1px solid #545a62}
+:root[data-theme='light']{--cream:#fff}:root[data-theme='light'] body,:root[data-theme='light'] .header,:root[data-theme='light'] .admin-panel,:root[data-theme='light'] .stat,:root[data-theme='light'] .form-card,:root[data-theme='light'] .auth-card,:root[data-theme='light'] .destination-card,:root[data-theme='light'] .testimonial,:root[data-theme='light'] .detail-panel,:root[data-theme='light'] .booking-card,:root[data-theme='light'] .summary,:root[data-theme='light'] .payment-card,:root[data-theme='light'] .filter-panel,:root[data-theme='light'] .booking-row,:root[data-theme='light'] .searchbar,:root[data-theme='light'] .modal-card{background:#fff}
+:root[data-theme='dark']{--cream:#2b2e33}:root[data-theme='dark'] body{background:#2b2e33}:root[data-theme='dark'] .header,:root[data-theme='dark'] .admin-main,:root[data-theme='dark'] .admin-editor{background:#2f3338}:root[data-theme='dark'] .form-card,:root[data-theme='dark'] .auth-card,:root[data-theme='dark'] .destination-card,:root[data-theme='dark'] .testimonial,:root[data-theme='dark'] .detail-panel,:root[data-theme='dark'] .booking-card,:root[data-theme='dark'] .summary,:root[data-theme='dark'] .payment-card,:root[data-theme='dark'] .filter-panel,:root[data-theme='dark'] .booking-row,:root[data-theme='dark'] .searchbar,:root[data-theme='dark'] .admin-row,:root[data-theme='dark'] .stat,:root[data-theme='dark'] .admin-panel,:root[data-theme='dark'] .modal-card{background:#3a3e44}:root[data-theme='dark'] input,:root[data-theme='dark'] select,:root[data-theme='dark'] textarea{background:#454a50}
+:root[data-theme='dark'] .lead{color:#c3c8ce}:root[data-theme='dark'] .pill-list span{background:#30353b;color:#e1e4e7}:root[data-theme='dark'] .two-col-copy ul,:root[data-theme='dark'] .destination-detail-grid>div>ul{color:#c3c8ce}:root[data-theme='dark'] .weather-card{background:#30353b;color:#f0f2f4}:root[data-theme='dark'] .weather-card p{color:#c3c8ce}:root[data-theme='dark'] .booking-card p{color:#c3c8ce}
+:root[data-theme='dark'] .booking-row .status,:root[data-theme='dark'] .status-paid,:root[data-theme='dark'] .status-approved,:root[data-theme='dark'] .status-confirmed,:root[data-theme='dark'] .status-completed{background:#3a4148;color:#d4f0e5}:root[data-theme='dark'] .status-pending,:root[data-theme='dark'] .status-cancellation_requested,:root[data-theme='dark'] .status-cancellation-requested{background:#4b4640;color:#f5d9a6}:root[data-theme='dark'] .status-rejected,:root[data-theme='dark'] .status-payment_failed,:root[data-theme='dark'] .status-cancelled{background:#4b3f40;color:#f3c4c4}:root[data-theme='dark'] .admin-row button:disabled,:root[data-theme='dark'] .button:disabled{background:#4a4f55;color:#c2c7cd}
+
+/* Responsive sizing keeps the existing colors, content and desktop layout. */
+@media screen {
+  img { max-width: 100%; }
+  input, select, textarea { min-width: 0; max-width: 100%; }
+  .header > *, .header-actions > *, .searchbar label,
+  .section-head > *, .explore-head > *, .trip-grid > *,
+  .destination-grid > *, .testimonial-grid > *, .detail-grid > *,
+  .destination-detail-grid > *, .booking-layout > *, .form-row > *,
+  .filter-panel > *, .booking-row > *, .booking-detail-grid > *,
+  .contact > *, .faq > *, .inspiration > *, .about-bottom > *,
+  .two-col-copy > *, .feature-grid > *, .admin-shell > *,
+  .admin-grid-two > *, .stats > *, .admin-row > *,
+  .admin-editor > *, .admin-filters > *, footer > * { min-width: 0; }
+  .searchbar label { grid-template-columns: 25px minmax(0, 1fr); }
+  .searchbar input, .searchbar select { width: 100%; min-width: 0; }
+  .hero-note { bottom: 66px; }
+  .logo, .logo-mark, .theme-toggle { flex-shrink: 0; }
+  .user-pill { max-width: 180px; }
+  .user-pill span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .button, .status { max-width: 100%; }
+  .button svg, .nav svg, .admin-side svg, .contact-details svg,
+  .faq-item svg, .info-chips svg { flex-shrink: 0; }
+  .faq-item button { gap: 12px; }
+  .faq-item button span { min-width: 0; overflow-wrap: anywhere; }
+  .faq-item button svg { margin-right: 4px; }
+  .trip-copy, .destination-card, .testimonial, .detail-copy,
+  .booking-card, .summary, .form-card, .payment-card, .detail-panel,
+  .account, .admin-row, .admin-panel, .stat, .modal-card,
+  .contact-details, footer { overflow-wrap: anywhere; }
+  .subscribe input { flex: 1; width: 100%; }
+  .filters { max-width: 100%; overflow-x: auto; }
+  .filters button { flex-shrink: 0; white-space: nowrap; }
+  .coupon-row input { width: 0; }
+  .coupon-row button { flex-shrink: 0; }
+  .qr-image { height: auto; aspect-ratio: 1; }
+  .payment-preview { max-width: min(220px, 100%); }
+  .payment-preview.large { max-width: min(360px, 100%); }
+}
+
+@media screen and (max-width: 1280px) {
+  .header { gap: 20px; }
+  .nav { margin-left: 0; gap: 20px; }
+  .header-actions { gap: 12px; }
+  .user-pill span { max-width: 140px; overflow-wrap: anywhere; }
+  .detail-grid, .destination-detail-grid { gap: 30px; }
+  .booking-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 30px; }
+  .contact, .faq { gap: 35px; }
+  .trip-bottom { flex-wrap: wrap; }
+}
+
+@media screen and (max-width: 1100px) {
+  .header { height: auto; min-height: 78px; padding-top: 16px; gap: 0 20px; flex-wrap: wrap; }
+  .nav, .nav.open {
+    display: flex;
+    position: static;
+    order: 3;
+    width: 100%;
+    margin: 0;
+    padding: 14px 8px 10px 0;
+    flex-direction: row;
+    gap: 18px;
+    border: 0;
+    overflow-x: auto;
+  }
+  .nav a { flex-shrink: 0; white-space: nowrap; }
+  .menu { display: none; }
+  /* Keep the expanded search in normal flow so it cannot cover the hero note. */
+  .hero { display: flex; flex-direction: column; min-height: 0; padding-top: 70px; padding-bottom: 30px; }
+  .hero-note { position: static; order: 1; margin-top: 24px; }
+  .searchbar-advanced {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    order: 2;
+    width: 100%;
+    margin-top: 24px;
+  }
+  .searchbar label { padding: 8px; border: 0; }
+  .searchbar button { width: 100%; margin: 0; }
+  .hero + .section { padding-top: 65px; }
+  .destination-grid, .testimonial-grid, .trip-grid, .trip-grid.wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .filter-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .detail-grid { grid-template-columns: minmax(0, 1fr) 280px; }
+  .destination-detail-grid { grid-template-columns: minmax(0, 1fr) 280px; }
+  .values { gap: 30px; }
+  .inspiration > div:first-child { padding: 40px 28px; }
+  footer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-side { width: 100%; }
+  .admin-brand { margin-left: 0; margin-right: 0; gap: 4px; }
+  .admin-side h2 { padding-left: 0; font-size: 22px; }
+  .admin-grid-two { grid-template-columns: minmax(0, 1fr); }
+  .admin-editor .form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-filters { flex-wrap: wrap; }
+  .admin-booking { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-booking .admin-actions { grid-column: 1 / -1; }
+}
+
+@media screen and (max-width: 900px) {
+  .detail-grid, .destination-detail-grid, .booking-layout,
+  .contact, .faq { grid-template-columns: minmax(0, 1fr); }
+  .booking-card { position: static; }
+  .summary { order: -1; }
+  .booking-row { grid-template-columns: minmax(0, 1fr); }
+  .booking-row .status { margin-left: 0; }
+  .admin-main { padding: 28px 4%; }
+  .admin-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-row .admin-actions { grid-column: 1 / -1; }
+}
+
+@media screen and (max-width: 800px) {
+  .header { min-height: 68px; padding-top: 12px; }
+  .header-actions { gap: 10px; }
+  .hero h1 { font-size: clamp(36px, 7vw, 46px); }
+  .section { padding-top: 55px; }
+  .details, .booking { padding-top: 35px; }
+  .searchbar-advanced { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .searchbar label { border-bottom: 1px solid var(--line); }
+  .searchbar input, .searchbar select, .filter-panel input, .filter-panel select,
+  .form-card input, .form-card select, .form-card textarea,
+  .admin-editor input, .admin-editor select, .admin-editor textarea,
+  .admin-filters input, .admin-filters select { font-size: 16px; }
+  .filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sort { flex-wrap: wrap; }
+  .section-head, .explore-head { gap: 20px; }
+  .admin-side { padding: 10px; }
+  .admin-brand { flex-shrink: 0; margin: 0 8px 0 0; }
+  .admin-side a { flex-shrink: 0; }
+  .admin-side .admin-back { display: flex !important; margin-top: 0 !important; }
+  .admin-title { flex-wrap: wrap; }
+  .admin-title .button { max-width: 100%; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-filters { grid-template-columns: minmax(0, 1fr); }
+  .admin-row, .admin-editor .form-row { grid-template-columns: minmax(0, 1fr); }
+  .booking-detail-page { padding-left: 0; padding-right: 0; }
+  .booking-detail-actions { flex-wrap: wrap; }
+  .booking-detail-actions .button { white-space: normal; }
+  .modal-card { max-height: 85dvh; }
+}
+
+@media screen and (max-width: 600px) {
+  .destination-grid, .testimonial-grid, .trip-grid, .trip-grid.wide,
+  .filter-panel, .stats { grid-template-columns: minmax(0, 1fr); }
+  .searchbar-advanced { grid-template-columns: minmax(0, 1fr) !important; }
+  .hero { padding-top: 50px; }
+  .hero + .section { padding-top: 55px; }
+  .searchbar button { margin-top: 8px; }
+  .searchbar label { grid-template-rows: 16px minmax(30px, auto); }
+  .form-row { grid-template-columns: minmax(0, 1fr); }
+  .timeline article { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .contact-intro h1, .faq h1, .about h1, .explore-head h1 {
+    font-size: clamp(36px, 10vw, 46px);
+  }
+  .detail-copy h1 { font-size: clamp(34px, 10vw, 43px); }
+  .account h1 { font-size: clamp(36px, 10vw, 44px); }
+  .form-card, .detail-panel, .payment-card { padding: 22px; }
+  .destination-facts, .amount-box { flex-wrap: wrap; gap: 8px; }
+  .booking-detail-actions { align-items: flex-start; flex-direction: column; }
+  .modal-card { padding: 24px 18px; }
+  .modal-card > h2 { padding-right: 24px; }
+  .empty { padding: 70px 12px; }
+}

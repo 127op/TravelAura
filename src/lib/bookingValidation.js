@@ -1,3 +1,5 @@
+import { calendarDate, emailAddress, requiredText } from './validation.js';
+
 export function couponDiscount(coupon, subtotal, now = new Date()) {
   if (!coupon || !coupon.active) throw new Error('Coupon is invalid or inactive.');
   if (coupon.expiryDate && new Date(`${coupon.expiryDate}T23:59:59.999Z`) < now) {
@@ -23,13 +25,15 @@ export function bookingData(input, pack, coupon, userId) {
       !Number.isInteger(rooms) || rooms < 1 || rooms > pack.maxRooms) {
     throw new Error('Traveler or room count exceeds this package capacity.');
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.travelDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.returnDate) ||
+  if (!calendarDate(input.travelDate) || !calendarDate(input.returnDate) ||
       input.travelDate < new Date().toISOString().slice(0, 10) || input.returnDate <= input.travelDate) {
     throw new Error('Choose valid available travel and return dates.');
   }
-  for (const field of ['customerName', 'email', 'phone']) {
-    if (!input[field]?.trim()) throw new Error('Name, email and phone are required.');
-  }
+  if (pack.availableDates?.length && !pack.availableDates.includes(input.travelDate)) throw new Error('This package is not available on the selected travel date.');
+  const customerName = requiredText(input.customerName, 'Name', 150), email = emailAddress(input.email);
+  const phone = requiredText(input.phone, 'Phone', 30);
+  if (!/^[0-9+ ()-]{8,30}$/.test(phone)) throw new Error('Enter a valid phone number.');
+  if (String(input.specialRequirements || '').length > 5000) throw new Error('Special requirements must be 5,000 characters or fewer.');
   const adultTotal = Number(pack.pricePerAdult) * adults, childTotal = Number(pack.pricePerChild) * children;
   const subtotal = adultTotal + childTotal;
   if (!Number.isFinite(subtotal) || subtotal < 0) throw new Error('Invalid package pricing.');
@@ -37,7 +41,7 @@ export function bookingData(input, pack, coupon, userId) {
   return {
     userId, packageId: pack.id, destinationId: pack.destinationId,
     packageName: pack.name, destination: pack.destination || '',
-    customerName: input.customerName.trim(), email: input.email.trim(), phone: input.phone.trim(),
+    customerName, email, phone,
     country: input.country || '', travelDate: input.travelDate, returnDate: input.returnDate,
     adults, children, rooms, specialRequirements: input.specialRequirements || '',
     subtotal, couponCode: coupon?.code || '', discount, totalAmount: subtotal - discount,

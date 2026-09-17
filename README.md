@@ -15,7 +15,7 @@ TravelAura is a responsive Tour & Travel booking assessment built with React + V
 - Manual payment confirmation after the customer pays the displayed UPI amount
 - My Bookings, booking detail view, payment/booking statuses and cancellation requests
 - Review submission after a booking is marked `completed`
-- Login, registration and optional Google sign-in when Firebase is configured
+- Login, registration and email/password sign-in (no Google button is shown)
 - About, Contact, FAQ and 404 pages
 
 ### Admin side
@@ -68,7 +68,7 @@ The Firebase SDK is already installed (`firebase@12.19.0`). Run `npm install` to
 1. Open [Firebase Console](https://console.firebase.google.com/) and **Create a project**.
 2. Open **Project settings → General → Your apps → Web (`</>`)**. Register a web app.
 3. Under the web app's **SDK setup and configuration → Config**, copy its six web config values. These are frontend identifiers, not a service account key.
-4. Open **Authentication → Get started → Sign-in method → Email/Password**, enable **Email/Password**, and save. Email-link sign-in is not required. The existing Google button is optional: enable **Google** and select a support email if you want to use it.
+4. Open **Authentication → Get started → Sign-in method → Email/Password**, enable **Email/Password**, and save. Email-link sign-in is not required. The UI uses email/password authentication; no unconfigured Google button is shown.
 5. Open **Firestore Database → Create database**. Use **Standard edition**, database ID **`(default)`**, choose a location and start in **Production mode**. The supplied Storage rules look up profiles in this default database.
 6. Open **Storage → Get started**, create the default bucket, and choose a location. Firebase currently requires the **Blaze** plan for Cloud Storage. Copy the actual bucket name from Console; do not guess between `.firebasestorage.app` and `.appspot.com`. See [Firebase's Storage setup guide](https://firebase.google.com/docs/storage/web/start).
 7. Copy the blank template: `cp .env.example .env`. `.env` and local variants are gitignored. No real or placeholder project credentials are supplied.
@@ -76,7 +76,7 @@ The Firebase SDK is already installed (`firebase@12.19.0`). Run `npm install` to
 9. Deploy the supplied rules **before registration** (commands below), then restart Vite with `npm run dev`. Vite reads environment variables at startup/build time.
 10. In **Authentication → Settings → Authorized domains**, add `localhost` if absent, your Netlify hostname, and any custom domain. This is especially necessary for the optional Google popup.
 11. Register your first account in TravelAura's **Create account** page. Use the procedure below to promote it in Console.
-12. In `/admin/destinations`, add a destination with **Active** checked. In `/admin/packages`, add a package linked to that destination with prices, capacity, available dates and **Active** checked. Uploaded images go to Storage. Public pages read these same Firestore collections. An empty Firebase project intentionally shows no demo trips or fabricated traveler stories.
+12. In `/admin/destinations`, add a destination with **Active** checked. In `/admin/packages`, add a package linked to that destination with prices, capacity, available dates and **Active** checked. Catalog uploads are compressed and saved with the listing, so optional Storage is not required for destination/package images. Public pages read these same Firestore collections. An empty Firebase project intentionally shows no demo trips or fabricated traveler stories.
 13. In **Netlify → Site configuration / Project configuration → Environment variables**, add all six values for the appropriate build context. Use build command `npm run build` and publish directory `dist`. Trigger a new deployment after changing variables. `netlify.toml` already contains the SPA rewrite.
 
 ```env
@@ -157,7 +157,7 @@ npm run test:seed
 
 ### Mode selection and recovery
 
-All six nonempty environment values select Firebase Auth + Firestore + Storage. Missing/incomplete values select the original localStorage demo services; partial configuration displays a notice. Browser-local demo records are kept separately and are never automatically uploaded to Firebase. Firebase failures are shown to the user and do not silently write a supposedly real booking into localStorage.
+The API key, auth domain, project ID and app ID select Firebase Auth + Firestore. The storage bucket and messaging sender ID are optional; an absent bucket does not switch authenticated users into demo mode. Missing/incomplete values select the original localStorage demo services; partial configuration displays a notice. Browser-local demo records are kept separately and are never automatically uploaded to Firebase. Firebase failures are shown to the user and do not silently write a supposedly real booking into localStorage.
 
 To demonstrate offline or recover from a bad Firebase setup, clear the six values in `.env` (also check shell/Netlify values and `.env.local` overrides), then restart Vite or rebuild Netlify. To restore Firebase, put back valid values and restart/rebuild. Already configured but invalid credentials, missing rules or disabled providers must be corrected, or explicitly switch back to demo this way.
 
@@ -173,20 +173,20 @@ To demonstrate offline or recover from a bad Firebase setup, clear the six value
 
 ## QR payment
 
-After updating to optional payment details, publish the updated `firestore.rules` in Firebase Console → Firestore Database → Rules, or run `npx firebase deploy --project YOUR_PROJECT_ID --only firestore:rules`. The old deployed rules require both fields. No rule deployment is performed automatically.
+Publish the current `firestore.rules` when deploying this version. The final QA fixes enforce valid departure dates and package availability, protect the booking price breakdown, and correct percentage-coupon rounding. No rule deployment is performed automatically.
 
 The project intentionally has **no payment gateway/API**.
 
 The flow is:
 1. User creates a booking.
 2. User opens `/payment/:bookingId`.
-3. User scans the UPI QR, pays manually, and submits payment confirmation.
+3. User submits a simulated payment confirmation. The demo QR is clearly labelled; no real money should be sent.
 4. Payment remains `pending`.
 5. Admin verifies the payment in Admin → Bookings.
 6. Approve → `paymentStatus: paid`, `bookingStatus: confirmed`.
 7. Reject → `paymentStatus: rejected`, `bookingStatus: payment_failed`.
 
-`public/payment-qr.svg` is a **demo placeholder, not a scannable payment QR**. Replace it with your own real UPI QR image before the assessment if you want to demonstrate a real scan. Keep the same path/name or update the `<img>` path in `src/pages/Payment.jsx`.
+`public/payment-qr.svg` is intentionally a **demo placeholder, not a scannable payment QR**, as confirmed for this assessment. The page and FAQ explicitly describe simulated payments. The current UI collects confirmation only; transaction IDs and screenshots remain optional service capabilities and are not displayed as form fields.
 
 ## Data collections
 
@@ -238,7 +238,7 @@ Admin:
 
 ## Verification
 
-Verified during implementation: `npm run build` passed, all 8 emulator service/security tests passed, and both browser scenarios passed. Vite reports a non-blocking JavaScript bundle-size warning.
+See `QA_AUDIT.md` for the final verification scope, results and deployment requirements. Vite reports a non-blocking JavaScript bundle-size warning.
 
 ```bash
 npm run build
@@ -268,3 +268,7 @@ The suite tests ownership, private reads, role escalation, booking amount tamper
 - Prices, coupon minimum/expiry/limits and statuses are checked, but this remains an assessment app: no shared departure inventory lock, trusted payment reconciliation, UTR uniqueness, refund automation, audit trail or cancellation policy engine. Coupon uses count when bookings are created and are not automatically refunded upon cancellation.
 - Client-side account deactivation uses Firestore `active`; deletion/password reset/email verification and revoking Auth sessions need additional management flows. Public catalogs/images and approved reviews remain public by design.
 - Demo credentials are intentionally permissive and local to that browser. Demo authorization is for assessment only; Firebase uses its own identity and deployed rules.
+
+### Final QA regression coverage
+
+`tests/browser/final-qa.spec.js` exercises registration and duplicate submissions, search-to-booking state, price/coupon totals, simulated payment rejection/resubmission/approval, private booking access, print invocation, completed-trip reviews and moderation, admin CRUD, uploads without Storage, contact/newsletter requests, and nine responsive viewports. Newsletter requests are saved in `contacts` for manual follow-up; the application does not send marketing email.

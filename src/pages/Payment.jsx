@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { db } from '../lib/dataService';
@@ -10,6 +10,7 @@ export default function Payment() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const submitting = useRef(false);
 
   useEffect(() => {
     Promise.resolve(db.getBooking(bookingId))
@@ -19,6 +20,8 @@ export default function Payment() {
 
   const submit = async event => {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setError('');
     setBusy(true);
     try {
@@ -26,9 +29,10 @@ export default function Payment() {
       setDone(true);
     } catch (failure) {
       setError(failure.code === 'permission-denied'
-        ? 'Payment confirmation is blocked by the deployed Firebase rules. Deploy the current firestore.rules file and try again.'
+        ? 'Your payment confirmation could not be saved. Please contact support.'
         : failure.message || 'Unable to submit payment confirmation.');
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -53,15 +57,15 @@ export default function Payment() {
 
   return <section className="section payment-page">
     <div className="payment-card">
-      <span className="eyebrow">MANUAL UPI PAYMENT</span>
+      <span className="eyebrow">DEMO UPI PAYMENT</span>
       <h1>Complete your payment</h1>
       <div className="amount-box">Amount <strong>₹{Number(booking.totalAmount).toLocaleString('en-IN')}</strong></div>
       <img className="qr-image" src="/payment-qr.svg" alt="TravelAura demo UPI QR" />
       <p><strong>UPI ID:</strong> travelaura@upi</p>
       <ol>
-        <li>Open any UPI app.</li>
-        <li>Scan the QR code and pay the exact amount.</li>
-        <li>After payment, submit the confirmation below.</li>
+        <li>This assessment uses a demo QR; do not send real money.</li>
+        <li>Submit the confirmation below to simulate a payment.</li>
+        <li>An admin reviews the confirmation and updates your booking.</li>
       </ol>
       <form onSubmit={submit}>
         {error && <p className="form-error" role="alert">{error}</p>}
@@ -69,7 +73,7 @@ export default function Payment() {
           {busy ? 'Submitting...' : 'Submit payment confirmation'}
         </button>
       </form>
-      <p className="safe">No payment API is used. Payment is verified manually by the admin.</p>
+      <p className="safe">Demo only. No money is collected. Payment approval is simulated by the admin.</p>
     </div>
   </section>;
 }

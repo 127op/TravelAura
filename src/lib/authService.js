@@ -6,6 +6,7 @@ import {
 import { doc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { auth, db, isDemo } from './firebase.js';
 import { demoAuth, seed } from './demoService.js';
+import { emailAddress, requiredText } from './validation.js';
 
 // Factory keeps the production services usable against Firebase emulators.
 export function createFirebaseAuthService(firebaseAuth, firestore) {
@@ -67,6 +68,9 @@ export function createFirebaseAuthService(firebaseAuth, firestore) {
       return ensureProfile(result.user);
     }),
     register: (name, email, password, phone = '') => authenticate(async () => {
+      requiredText(name, 'Name', 150);
+      emailAddress(email);
+      if (!/^[0-9+ ()-]{8,30}$/.test(phone.trim())) throw new Error('Enter a valid phone number.');
       const result = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
       await updateProfile(result.user, { displayName: name.trim() });
       return ensureProfile(result.user, { name: name.trim(), phone: phone.trim() });

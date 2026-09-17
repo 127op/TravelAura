@@ -100,6 +100,7 @@ test('optional payment details, upload privacy, file limits and manual approval'
   await noUploadService.submitPayment(booking.id, '123456789012');
   assert.equal((await service.getBooking(booking.id)).transactionId, '123456789012');
   const file = new File([new Uint8Array([137, 80, 78, 71])], 'proof.png', { type: 'image/png' });
+  await assert.rejects(createStorageService(null)(file, `payments/alice/${booking.id}/proof`), /storage is unavailable/);
   const imageOnlyBooking = await service.createBooking(input);
   await service.submitPayment(imageOnlyBooking.id, '', file);
   assert.equal((await service.getBooking(imageOnlyBooking.id)).transactionId, '');
@@ -153,4 +154,54 @@ test('contacts allow valid guest submissions but protect messages from public re
   await assertFails(getDoc(doc(guest.firestore(), 'contacts', contact.id)));
   assert.equal((await adminService.getContacts()).length, 1);
   await assertFails(setDoc(doc(guest.firestore(), 'contacts', 'bad'), { name: '' }));
+});
+
+test('booking dates, availability, package identity and price breakdown cannot be forged', async () => {
+  for (const patch of [
+    { travelDate: '2099-02-30' }, { travelDate: '2000-01-01' },
+    { travelDate: '2099-10-11' }, { returnDate: '2099-10-10' },
+    { adults: 0 }, { adults: 1.5 }, { children: -1 }, { rooms: 0 },
+  ]) await assert.rejects(service.createBooking({ ...input, ...patch }));
+  const valid = await service.createBooking(input);
+  const { id, ...data } = valid;
+  for (const patch of [
+    { travelDate: '2000-01-01' }, { travelDate: '2099-02-30' },
+    { travelDate: '2099-10-11' }, { packageName: 'Forged package' },
+    { destination: 'Forged destination' }, { priceBreakdown: { total: 1 } },
+  ]) await assertFails(setDoc(doc(user.firestore(), 'bookings', `forged-${Math.random()}`), { ...data, ...patch, createdAt: serverTimestamp() }));
+});
+
+test('review validation, ownership, duplicate protection and owner-visible moderation status', async () => {
+  const b = await service.createBooking(input);
+  await adminService.updateBooking(b.id, { bookingStatus: 'completed' });
+  const review = { bookingId: b.id, packageId: 'tour', rating: 4, title: 'Reviewed once', comment: 'A completed trip.' };
+  for (const patch of [{ rating: 0 }, { rating: 6 }, { rating: 1.5 }, { title: '  ' }, { comment: 'x'.repeat(5001) }, { packageId: 'hidden' }]) {
+    await assert.rejects(service.saveReview({ ...review, ...patch }));
+  }
+  const otherService = createFirestoreService({ currentUser: { uid: 'bob' } }, other.firestore());
+  await assert.rejects(otherService.saveReview(review));
+  await service.saveReview(review);
+  await assert.rejects(service.saveReview(review), /already submitted/);
+  assert.equal((await service.getMyReview(b.id)).status, 'pending');
+  assert.equal(await otherService.getMyReview(b.id), null);
+  await adminService.updateReview(b.id, { status: 'approved' });
+  assert.equal((await service.getMyReview(b.id)).status, 'approved');
+});
+
+test('admin operations reject normal users and invalid catalog/contact values', async () => {
+  await assertFails(setDoc(doc(user.firestore(), 'destinations', 'intruder'), { name: 'Intruder', active: true }));
+  await assertFails(updateDoc(doc(user.firestore(), 'packages', 'tour'), { pricePerAdult: 1 }));
+  await assert.rejects(async () => adminService.saveDestination({ name: '  ', budget: 100 }));
+  await assert.rejects(async () => adminService.saveDestination({ name: 'Place', budget: -1 }));
+  await assert.rejects(async () => adminService.savePackage({ ...pack, duration: 5, rating: 4, pricePerAdult: -1 }));
+  await assert.rejects(async () => service.saveContact({ name: 'Name', email: 'invalid', message: 'Hi' }));
+  await assert.rejects(async () => service.saveContact({ name: 'Name', email: 'a@example.test', message: '  ' }));
+});
+
+test('percentage coupons round rupee fractions consistently in the service and rules', async () => {
+  await env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), 'packages', 'fractional'), { ...pack, id: 'fractional', pricePerAdult: 1006 }));
+  await adminService.saveCoupon({ code: 'ROUND10', type: 'percentage', value: 10, minimumAmount: 0, expiryDate: '', usageLimit: 0, active: true });
+  const booking = await service.createBooking({ ...input, packageId: 'fractional', adults: 1, children: 0, couponCode: 'ROUND10' });
+  assert.equal(booking.discount, 101);
+  assert.equal(booking.totalAmount, 905);
 });

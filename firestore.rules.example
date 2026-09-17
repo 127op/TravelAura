@@ -1,4 +1,3 @@
-// Compatibility copy. Deploy the canonical firestore.rules file configured in firebase.json.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -9,7 +8,14 @@ service cloud.firestore {
     function isAdmin() {
       return activeUser() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    function text(value, max) { return value is string && value.size() > 0 && value.size() <= max; }
+    function text(value, max) { return value is string && value.trim().size() > 0 && value.size() <= max; }
+    function calendarDay(value) {
+      return timestamp.date(int(value[0:4]), int(value[5:7]), int(value[8:10]));
+    }
+    function validDate(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && calendarDay(value).month() == int(value[5:7]) && calendarDay(value).day() == int(value[8:10]);
+    }
     match /users/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list, delete: if isAdmin();
@@ -17,7 +23,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'phone', 'role', 'active', 'createdAt'])
         && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'user' && request.resource.data.active == true
-        && text(request.resource.data.name, 150) && request.resource.data.phone is string
+        && text(request.resource.data.name, 150) && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
         && request.resource.data.createdAt == request.time;
       allow update: if isAdmin() || (activeUser() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone'])
@@ -40,7 +46,7 @@ service cloud.firestore {
     }
     function discount(code, subtotal) {
       let c = get(/databases/$(database)/documents/coupons/$(code)).data;
-      let amount = c.type == 'fixed' ? c.value : math.round(subtotal * c.value / 100);
+      let amount = c.type == 'fixed' ? c.value : math.round(subtotal * c.value / 100.0);
       return amount > subtotal ? subtotal : amount;
     }
     function couponForBooking(b, bookingId) {
@@ -55,15 +61,20 @@ service cloud.firestore {
       let p = get(/databases/$(database)/documents/packages/$(b.packageId)).data;
       return b.keys().hasOnly(['userId', 'packageId', 'destinationId', 'packageName', 'destination', 'customerName', 'email', 'phone', 'country', 'travelDate', 'returnDate', 'adults', 'children', 'rooms', 'specialRequirements', 'subtotal', 'couponCode', 'discount', 'totalAmount', 'priceBreakdown', 'transactionId', 'paymentScreenshot', 'paymentStatus', 'bookingStatus', 'createdAt'])
         && b.userId == request.auth.uid && p.active == true && b.destinationId == p.destinationId
+        && b.packageName == p.name && b.destination == p.destination
         && b.adults is int && b.adults >= 1 && b.adults <= p.maxAdults
         && b.children is int && b.children >= 0 && b.children <= p.maxChildren
         && b.rooms is int && b.rooms >= 1 && b.rooms <= p.maxRooms
         && text(b.customerName, 150) && text(b.email, 254) && text(b.phone, 30)
         && b.specialRequirements is string && b.specialRequirements.size() <= 5000
-        && b.travelDate is string && b.returnDate > b.travelDate
-        && (p.availableDates.size() == 0 || b.travelDate in p.availableDates)
+        && validDate(b.travelDate) && validDate(b.returnDate)
+        && calendarDay(b.travelDate) >= request.time.date()
+        && (p.get('availableDates', []).size() == 0 || b.travelDate in p.availableDates)
+        && b.returnDate > b.travelDate
         && b.subtotal == p.pricePerAdult * b.adults + p.pricePerChild * b.children
         && b.discount >= 0 && b.discount <= b.subtotal && b.totalAmount == b.subtotal - b.discount
+        && b.priceBreakdown == {'adultTotal': p.pricePerAdult * b.adults, 'childTotal': p.pricePerChild * b.children,
+          'subtotal': b.subtotal, 'discount': b.discount, 'total': b.totalAmount}
         && couponForBooking(b, id)
         && b.paymentStatus == 'pending' && b.bookingStatus == 'pending'
         && b.transactionId == '' && b.paymentScreenshot == '' && b.createdAt == request.time;

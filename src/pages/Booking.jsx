@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, TicketPercent } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { errorMessage } from '../lib/feedback';
 import { db } from '../lib/dataService';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,16 +9,26 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export default function Booking() {
   const { packageId } = useParams();
+  const [params] = useSearchParams();
+  const submitting = useRef(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [pack, setPack] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [applied, setApplied] = useState(null);
-  const [form, setForm] = useState({ travelDate: '', returnDate: '', adults: 2, children: 0, rooms: 1, name: user?.name || '', email: user?.email || '', phone: user?.phone || '', country: 'India', specialRequirements: '', coupon: '' });
+  const [form, setForm] = useState({ travelDate: params.get('date') || '', returnDate: '', adults: Number(params.get('adults')) || 2, children: Number(params.get('children')) || 0, rooms: Number(params.get('rooms')) || 1, name: user?.name || '', email: user?.email || '', phone: user?.phone || '', country: 'India', specialRequirements: '', coupon: '' });
 
   useEffect(() => {
-    Promise.resolve(db.getPackages()).then(packages => setPack(packages.find(item => item.id === packageId))).catch(failure => setError(failure.message));
+    Promise.resolve(db.getPackages()).then(packages => {
+      const item = packages.find(item => item.id === packageId);
+      setPack(item);
+      if (item) setForm(current => ({ ...current,
+        adults: Math.max(1, Math.min(item.maxAdults, current.adults)),
+        children: Math.max(0, Math.min(item.maxChildren, current.children)),
+        rooms: Math.max(1, Math.min(item.maxRooms, current.rooms)),
+      }));
+    }).catch(failure => setError(errorMessage(failure)));
   }, [packageId]);
 
   const update = event => {
@@ -31,25 +42,30 @@ export default function Booking() {
   const total = Math.max(0, subtotal - discount);
 
   const applyCoupon = async () => {
+    if (submitting.current || busy) return;
     setError('');
     setApplied(null);
     setBusy(true);
-    try { setApplied(await db.validateCoupon(form.coupon, subtotal)); } catch (failure) { setError(failure.message); } finally { setBusy(false); }
+    try { setApplied(await db.validateCoupon(form.coupon, subtotal)); } catch (failure) { setError(errorMessage(failure)); } finally { setBusy(false); }
   };
 
   const submit = async event => {
     event.preventDefault();
+    if (submitting.current || busy) return;
     setError('');
     if (!pack) return;
     if (!form.travelDate || !form.returnDate) return setError('Choose travel and return dates.');
+    if (pack.availableDates?.length && !pack.availableDates.includes(form.travelDate)) return setError('This package is not available on the selected travel date.');
     if (form.returnDate <= form.travelDate) return setError('Return date must be after travel date.');
     if (Number(form.adults) < 1 || Number(form.adults) > Number(pack.maxAdults) || Number(form.children) > Number(pack.maxChildren)) return setError('Traveler count exceeds this package capacity.');
     if (Number(form.rooms) < 1 || Number(form.rooms) > Number(pack.maxRooms)) return setError('Invalid room count.');
+    submitting.current = true;
     setBusy(true);
     try {
-      const booking = await db.createBooking({ ...form, customerName: form.name, userId: user.id, packageId: pack.id, destinationId: pack.destinationId, packageName: pack.name, destination: pack.destination, adults: Number(form.adults), children: Number(form.children), rooms: Number(form.rooms), couponCode: applied?.code || '', subtotal, discount, totalAmount: total, priceBreakdown: { adultTotal: Number(pack.pricePerAdult) * Number(form.adults), childTotal: Number(pack.pricePerChild) * Number(form.children), subtotal, discount, total }, paymentStatus: 'pending', bookingStatus: 'pending' });
+      const { coupon: _coupon, ...bookingForm } = form;
+      const booking = await db.createBooking({ ...bookingForm, customerName: form.name, userId: user.id, packageId: pack.id, destinationId: pack.destinationId, packageName: pack.name, destination: pack.destination, adults: Number(form.adults), children: Number(form.children), rooms: Number(form.rooms), couponCode: applied?.code || '', subtotal, discount, totalAmount: total, priceBreakdown: { adultTotal: Number(pack.pricePerAdult) * Number(form.adults), childTotal: Number(pack.pricePerChild) * Number(form.children), subtotal, discount, total }, paymentStatus: 'pending', bookingStatus: 'pending' });
       navigate(`/payment/${booking.id}`);
-    } catch (failure) { setError(failure.message || 'Unable to create booking.'); } finally { setBusy(false); }
+    } catch (failure) { setError(errorMessage(failure)); } finally { submitting.current = false; setBusy(false); }
   };
 
   if (!pack) return <section className="section"><div className="empty">{error || 'Loading package or package unavailable.'}</div></section>;
@@ -61,20 +77,22 @@ export default function Booking() {
         <span className="eyebrow">RESERVE YOUR JOURNEY</span>
         <h1>Book {pack.name}</h1>
         <label>Travel date<input required type="date" min={today()} name="travelDate" value={form.travelDate} onChange={update} /></label>
+        {!!pack.availableDates?.length && <p className="coupon-hint">Available departures: {pack.availableDates.filter(date => date >= today()).join(', ') || 'No upcoming departures. Please contact us.'}</p>}
         <label>Return date<input required type="date" min={form.travelDate || today()} name="returnDate" value={form.returnDate} onChange={update} /></label>
         <div className="form-row"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: pack.maxAdults }, (_, index) => index + 1).map(value => <option key={value}>{value}</option>)}</select></label><label>Children<select name="children" value={form.children} onChange={update}>{Array.from({ length: pack.maxChildren + 1 }, (_, index) => index).map(value => <option key={value}>{value}</option>)}</select></label></div>
         <label>Rooms<select name="rooms" value={form.rooms} onChange={update}>{Array.from({ length: pack.maxRooms }, (_, index) => index + 1).map(value => <option key={value}>{value}</option>)}</select></label>
-        <label>Full name<input required name="name" value={form.name} onChange={update} /></label>
-        <label>Email<input required type="email" name="email" value={form.email} onChange={update} /></label>
-        <label>Phone<input required pattern="[0-9+ -]{8,15}" name="phone" value={form.phone} onChange={update} /></label>
+        <label>Full name<input required maxLength={150} name="name" value={form.name} onChange={update} /></label>
+        <label>Email<input required maxLength={254} type="email" name="email" value={form.email} onChange={update} /></label>
+        <label>Phone<input required pattern="[0-9+ \(\)\- ]{8,30}" name="phone" value={form.phone} onChange={update} /></label>
         <label>Country<input required name="country" value={form.country} onChange={update} /></label>
-        <label>Special requirements<textarea name="specialRequirements" value={form.specialRequirements} onChange={update} placeholder="Dietary needs, room preference, etc." /></label>
+        <label>Special requirements<textarea maxLength={5000} name="specialRequirements" value={form.specialRequirements} onChange={update} placeholder="Dietary needs, room preference, etc." /></label>
         <div className="coupon-row"><input name="coupon" value={form.coupon} onChange={update} placeholder="Coupon code" /><button type="button" disabled={busy} onClick={applyCoupon}><TicketPercent size={16} /> Apply</button></div>
+        <p className="coupon-hint"><strong>CS100</strong> gives 100% off on bookings over ₹1,000, or use <strong>FIRST1000</strong> for ₹1,000 off. Both expire 2027-12-31.</p>
         {applied && <p className="success-text">Coupon {applied.code} applied.</p>}
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="button full" disabled={busy}>{busy ? 'Creating booking...' : 'Continue to payment'}</button>
       </form>
-      <aside className="summary"><img src={pack.images?.[0]} alt={pack.name} /><h3>{pack.name}</h3><p>{pack.destination} · {pack.duration} days</p><div className="price-lines"><span>Adults ({form.adults}) <b>₹{(pack.pricePerAdult * Number(form.adults)).toLocaleString('en-IN')}</b></span><span>Children ({form.children}) <b>₹{(pack.pricePerChild * Number(form.children)).toLocaleString('en-IN')}</b></span><span>Subtotal <b>₹{subtotal.toLocaleString('en-IN')}</b></span>{discount > 0 && <span>Discount <b>-₹{discount.toLocaleString('en-IN')}</b></span>}<span className="total-line">Total <b>₹{total.toLocaleString('en-IN')}</b></span></div></aside>
+      <aside className="summary">{pack.images?.[0]&&<img src={pack.images[0]} alt={pack.name} />}<h3>{pack.name}</h3><p>{pack.destination} · {pack.duration} days</p><div className="price-lines"><span>Adults ({form.adults}) <b>₹{(pack.pricePerAdult * Number(form.adults)).toLocaleString('en-IN')}</b></span><span>Children ({form.children}) <b>₹{(pack.pricePerChild * Number(form.children)).toLocaleString('en-IN')}</b></span><span>Subtotal <b>₹{subtotal.toLocaleString('en-IN')}</b></span>{discount > 0 && <span>Discount <b>-₹{discount.toLocaleString('en-IN')}</b></span>}<span className="total-line">Total <b>₹{total.toLocaleString('en-IN')}</b></span></div></aside>
     </div>
   </section>;
 }

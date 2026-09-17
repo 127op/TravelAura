@@ -33,6 +33,7 @@ export default function Packages() {
       && (filters.category === 'All' || item.category === filters.category)
       && (!filters.duration || Number(item.duration) <= Number(filters.duration))
       && (!filters.rating || Number(item.rating) >= Number(filters.rating))
+      && (!searchDate || !item.availableDates?.length || item.availableDates.includes(searchDate))
       && (!requestedAdults || requestedAdults <= Number(item.maxAdults || 999))
       && (!requestedChildren || requestedChildren <= Number(item.maxChildren || 999))
       && (!requestedRooms || requestedRooms <= Number(item.maxRooms || 999))

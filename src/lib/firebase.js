@@ -12,10 +12,10 @@ export const firebaseConfig = {
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim(),
   appId: env.VITE_FIREBASE_APP_ID?.trim(),
 };
-export const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean);
+export const isFirebaseConfigured = ['apiKey', 'authDomain', 'projectId', 'appId'].every(key => Boolean(firebaseConfig[key]));
 export const isDemo = !isFirebaseConfigured;
 export const hasPartialFirebaseConfig = !isFirebaseConfigured && Object.values(firebaseConfig).some(Boolean);
 const app = isFirebaseConfigured ? (getApps().length ? getApp() : initializeApp(firebaseConfig)) : null;
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-export const storage = app ? getStorage(app) : null;
+export const storage = app && firebaseConfig.storageBucket ? getStorage(app) : null;
